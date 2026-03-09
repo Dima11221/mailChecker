@@ -9,7 +9,6 @@ import {
   deleteMailbox,
   emailsKeys,
   mailboxesKeys,
-  type IEmails,
   type IMailboxForm,
 } from "./api";
 
@@ -71,6 +70,11 @@ const App = () => {
     }
   }
 
+  const emailsByMailbox = mailboxes.map((mb) => ({
+    mailbox: mb,
+    emails: emails.filter((e) => e.mailbox_email === mb.email),
+  }));
+
   return (
     <div>
       <div className={style.mailboxesSection}>
@@ -82,23 +86,62 @@ const App = () => {
         >
           Добавить почту для отслеживания
         </button>
-        {mailboxes.length > 0 && (
-          <ul className={style.mailboxList}>
-            {mailboxes.map((mb) => (
-              <li key={mb.id} className={style.mailboxItem}>
-                <span>{mb.email}</span>
-                <button
-                  type="button"
-                  className={style.deleteBtn}
-                  onClick={() => handleDeleteMailbox(mb.id)}
-                >
-                  Удалить
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
       </div>
+
+      {emailsByMailbox.map(({ mailbox: mb, emails: mailboxEmails }) => (
+        <div key={mb.id} className={style.mailboxBlock}>
+          <div className={style.mailboxHeader}>
+            <h3>{mb.email}</h3>
+            <button
+              type="button"
+              className={style.deleteBtn}
+              onClick={() => handleDeleteMailbox(mb.id)}
+            >
+              Удалить ящик
+            </button>
+          </div>
+          <div className={style.tableContainer}>
+            <table border={1} cellPadding={20} className={style.mailTable}>
+              <thead>
+                <tr>
+                  <th className={style.colNarrow}>Источник</th>
+                  <th>Тема</th>
+                  <th className={style.colNarrow}>Папка</th>
+                  <th className={style.colDate}>Дата</th>
+                  <th className={style.colContent}>Содержимое</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mailboxEmails.length === 0 ? (
+                  <tr>
+                    <td colSpan={5}>Нет писем</td>
+                  </tr>
+                ) : (
+                  mailboxEmails.map((email) => (
+                    <tr key={email.id}>
+                      <td>{email.source}</td>
+                      <td>{email.subject}</td>
+                      <td>{email.folder}</td>
+                      <td>{new Date(email.received_at).toLocaleString()}</td>
+                      <td>
+                        <button
+                          type="button"
+                          onClick={() => toggleOpen(email.id)}
+                        >
+                          {openEmailIds.includes(email.id) ? 'Закрыть' : 'Подробнее'}
+                        </button>
+                        {openEmailIds.includes(email.id) ? (
+                          <div className={style.mailBody}>{email.body}</div>
+                        ) : null}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ))}
 
       {showModal && (
         <div className={style.modalOverlay}>
@@ -169,44 +212,6 @@ const App = () => {
           </div>
         </div>
       )}
-      <h2>Письма</h2>
-      <div className={style.tableContainer}>
-        <table border={1} cellPadding={20} className={style.mailTable}>
-        <thead>
-          <tr>
-            <th className={style.colNarrow}>Почта</th>
-            <th className={style.colNarrow}>Источник</th>
-            <th>Тема</th>
-            <th className={style.colNarrow}>Папка</th>
-            <th className={style.colDate}>Дата</th>
-            <th className={style.colContent}>Содержимое</th>
-          </tr>
-        </thead>
-        <tbody>
-        {emails && emails.length > 0 && emails.map((email: IEmails) => (
-          <tr key={email.id}>
-            <td>{email.mailbox_email}</td>
-            <td>{email.source}</td>
-            <td>{email.subject}</td>
-            <td>{email.folder}</td>
-            <td>{new Date(email.received_at).toLocaleString()}</td>
-            <td>
-              <button
-                type="button"
-                onClick={() => toggleOpen(email.id)}
-              >
-                {openEmailIds.includes(email.id) ? ('Закрыть') : ('Подробнее')}
-              </button>
-              {openEmailIds.includes(email.id) ? (
-                <div className={style.mailBody}>{email.body}</div>
-              ) : null}
-            </td>
-          </tr>
-
-        ))}
-        </tbody>
-      </table>
-      </div>
     </div>
   )
 }
