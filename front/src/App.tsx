@@ -1,7 +1,10 @@
 import './App.css'
-import {useEffect, useState} from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import style from "./style.module.scss"
+
+const API = 'http://localhost:5001';
 
 interface IEmails {
   id: string
@@ -19,8 +22,22 @@ interface IMailbox {
 }
 
 const App = () => {
-  const [emails, setEmails] = useState<IEmails[]>([]);
-  const [mailboxes, setMailboxes] = useState<IMailbox[]>([]);
+  const queryClient = useQueryClient();
+  const { data: emails = [] } = useQuery({
+    queryKey: ['emails'],
+    queryFn: async () => {
+      const { data } = await axios.get<IEmails[]>(`${API}/emails`);
+      return data;
+    },
+  });
+  const { data: mailboxes = [] } = useQuery({
+    queryKey: ['mailboxes'],
+    queryFn: async () => {
+      const { data } = await axios.get<IMailbox[]>(`${API}/mailboxes`);
+      return data;
+    },
+  });
+
   const [openEmailIds, setOpenEmailIds] = useState<string[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [mailboxForm, setMailboxForm] = useState({
@@ -40,27 +57,12 @@ const App = () => {
     );
   }
 
-  const fetchEmails = async () => {
-    const response = await axios.get('http://localhost:5001/emails');
-    setEmails(response.data);
-  }
-
-  const fetchMailboxes = async () => {
-    const response = await axios.get('http://localhost:5001/mailboxes');
-    setMailboxes(response.data);
-  }
-
-  useEffect(() => {
-    fetchEmails();
-    fetchMailboxes();
-  }, []);
-
   const handleDeleteMailbox = async (id: number) => {
     if (!confirm('Удалить этот почтовый ящик? Письма из него тоже удалятся.')) return;
     try {
-      await axios.delete(`http://localhost:5001/mailboxes/${id}`);
-      fetchMailboxes();
-      fetchEmails();
+      await axios.delete(`${API}/mailboxes/${id}`);
+      await queryClient.invalidateQueries({ queryKey: ['mailboxes'] });
+      await queryClient.invalidateQueries({ queryKey: ['emails'] });
     } catch (error) {
       console.error('Error deleting mailbox', error);
       alert('Ошибка при удалении');
@@ -70,7 +72,7 @@ const App = () => {
   const handleAddMailbox = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5001/mailboxes', mailboxForm);
+      await axios.post(`${API}/mailboxes`, mailboxForm);
       setShowModal(false);
       setMailboxForm({
         user_id: 1,
@@ -83,7 +85,7 @@ const App = () => {
         active: true
       });
       alert('Почта успешно добавлена!');
-      fetchMailboxes();
+      await queryClient.invalidateQueries({ queryKey: ['mailboxes'] });
     } catch (error) {
       console.error('Error adding mailbox', error);
       alert('Ошибка при добавлении почты');
