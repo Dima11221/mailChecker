@@ -1,8 +1,8 @@
 export interface IEmails {
-  id: string;
+  id: number;
   mailbox_email: string;
   source: string;
-  subject: string;
+  subject: string | null;
   body: string;
   folder: string;
   received_at: string;
@@ -11,10 +11,14 @@ export interface IEmails {
 export interface IMailbox {
   id: number;
   email: string;
+  active: boolean;
+  last_checked_at: string | null;
+  last_success_at: string | null;
+  last_error: string | null;
+  consecutive_failures: number;
 }
 
 export interface IMailboxForm {
-  user_id: number;
   email: string;
   host: string;
   port: number;
@@ -22,4 +26,21 @@ export interface IMailboxForm {
   login: string;
   password: string;
   active: boolean;
+}
+
+export interface IUser {
+  id: number;
+  email: string;
+  name: string | null;
+  created_at?: string;
+}
+
+export interface ILoginPayload {
+  email: string;
+  password: string;
+}
+
+export interface ILoginResponse {
+  token: string;
+  user: IUser;
 }

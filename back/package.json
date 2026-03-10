@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn src/app.ts",
-    "start": "ts-node src/app.ts",
+    "dev:api": "ts-node-dev --respawn src/server.ts",
+    "dev:worker": "ts-node-dev --respawn src/worker.ts",
+    "start:api": "ts-node src/server.ts",
+    "start:worker": "ts-node src/worker.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -12,10 +14,12 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "imapflow": "^1.2.9",
+    "jsonwebtoken": "^9.0.3",
     "mailparser": "^3.9.3",
     "node-cron": "^4.2.1",
     "pg": "^8.18.0"
@@ -23,6 +27,7 @@
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/mailparser": "^3.4.6",
     "@types/node": "^25.2.3",
     "@types/pg": "^8.16.0",

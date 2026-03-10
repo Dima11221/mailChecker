@@ -1,7 +1,10 @@
 import { Router } from "express";
 import {createMailbox, deleteMailbox, getMailBoxes, mails} from "../controllers/mails";
+import { requireAuth } from "../requireAuth";
 
 const router = Router();
+
+router.use(requireAuth);
 
 router.get("/emails", mails);
 
