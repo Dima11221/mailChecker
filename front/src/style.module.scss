@@ -158,6 +158,34 @@
   }
 }
 
+.mailboxStatus {
+  padding: 10px 16px;
+  border-bottom: 1px solid #e0e0e0;
+  font-size: 14px;
+}
+
+.mailboxError {
+  background: #fdecea;
+  color: #b71c1c;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #f5c6cb;
+}
+
+.mailboxOk {
+  color: #1b5e20;
+  padding: 4px 0;
+}
+
+.mailboxMuted {
+  color: #666;
+}
+
+.mailboxFailures {
+  color: #c62828;
+  font-weight: 600;
+}
+
 .mailboxList {
   list-style: none;
   padding: 0;

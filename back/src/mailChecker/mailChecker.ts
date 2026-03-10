@@ -18,6 +18,79 @@ type MailboxRow = {
   password_encrypted: string;
 };
 
+const LAST_ERROR_MAX = 1200;
+
+/**
+ * ImapFlow часто кидает Error с message "Command failed", но на объекте есть
+ * authenticationFailed, responseText от сервера, code сокета — собираем понятный текст для UI.
+ */
+function formatImapError(mailbox: MailboxRow, error: unknown): string {
+  const e = error as Record<string, unknown> & { message?: string };
+  const parts: string[] = [];
+
+  const hostInfo = `host ${mailbox.host}:${mailbox.port}${mailbox.secure ? " (SSL)" : ""}`;
+
+  if (e.authenticationFailed === true) {
+    parts.push(
+      "Не удалось войти в почту по IMAP. Проверьте логин и пароль приложения (не обычный пароль от аккаунта)."
+    );
+    if (typeof e.serverResponseCode === "string" && e.serverResponseCode) {
+      parts.push(`Код ответа сервера: ${e.serverResponseCode}.`);
+    }
+  }
+
+  if (typeof e.responseText === "string" && e.responseText.trim()) {
+    parts.push(`Сервер: ${e.responseText.trim()}`);
+  }
+
+  if (typeof e.code === "string" && e.code) {
+    switch (e.code) {
+      case "ENOTFOUND":
+        parts.push(
+          `Не найден адрес ${hostInfo} — проверьте написание host (например imap.mail.ru, а не imap.mail.r).`
+        );
+        break;
+      case "ECONNREFUSED":
+        parts.push(
+          `Подключение отклонено (${hostInfo}) — неверный порт или сервер не слушает SSL на этом порту.`
+        );
+        break;
+      case "ETIMEDOUT":
+      case "ESOCKETTIMEDOUT":
+        parts.push(`Таймаут при подключении к ${hostInfo}.`);
+        break;
+      case "CERT_HAS_EXPIRED":
+      case "UNABLE_TO_VERIFY_LEAF_SIGNATURE":
+        parts.push("Проблема с SSL-сертификатом сервера.");
+        break;
+      default:
+        if (!e.authenticationFailed) {
+          parts.push(`Сеть/сокет: ${e.code}`);
+        }
+    }
+  }
+
+  if (typeof e.responseStatus === "string" && e.responseStatus && e.responseStatus !== "OK") {
+    parts.push(`Статус IMAP: ${e.responseStatus}`);
+  }
+
+  const rawMessage = typeof e.message === "string" ? e.message : "";
+  if (rawMessage && rawMessage !== "Command failed") {
+    parts.push(rawMessage);
+  } else if (rawMessage === "Command failed" && parts.length === 0) {
+    parts.push(
+      `Команда IMAP завершилась с ошибкой (${hostInfo}). Проверьте host, порт, SSL и пароль приложения.`
+    );
+  }
+
+  if (parts.length === 0) {
+    parts.push(rawMessage || "Неизвестная ошибка при подключении к IMAP.");
+  }
+
+  const text = parts.join(" ").replace(/\s+/g, " ").trim();
+  return text.slice(0, LAST_ERROR_MAX);
+}
+
 function makeDedupeKey(params: {
   messageId: string | null;
   folder: string;
@@ -152,7 +225,8 @@ export async function checkMailboxes() {
       );
 
       console.log("Done mailbox:", mailbox.email);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const lastError = formatImapError(mailbox, error);
       await pool.query(
         `UPDATE mailboxes
          SET
@@ -161,7 +235,7 @@ export async function checkMailboxes() {
            consecutive_failures = consecutive_failures + 1,
            updated_at = NOW()
          WHERE id = $1`,
-        [mailbox.id, String(error?.message ?? "Unknown error").slice(0, 1000)]
+        [mailbox.id, lastError]
       );
 
       console.error("Error checking mailbox:", mailbox.email, error);

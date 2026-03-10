@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import { pool } from "../db/db";
 import { JWT_SECRET } from "../env";
 import { AuthRequest } from "../authTypes";
+import { loginSchema } from "../validators";
 
 type UserRow = {
   id: number;
@@ -13,14 +14,12 @@ type UserRow = {
 };
 
 export async function login(req: Request, res: Response) {
-  const { email, password } = req.body as {
-    email?: string;
-    password?: string;
-  };
-
-  if (!email || !password) {
-    return res.status(400).json({ error: "Email and password are required" });
+  const parsed = loginSchema.safeParse(req.body);
+  if (!parsed.success) {
+    const msg = parsed.error.issues.map((e: { message: string }) => e.message).join("; ") || "Неверные данные";
+    return res.status(400).json({ error: msg });
   }
+  const { email, password } = parsed.data;
 
   const { rows } = await pool.query<UserRow>(
     `SELECT id, email, password_hash, name

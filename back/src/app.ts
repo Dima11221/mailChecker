@@ -21,4 +21,10 @@ app.get("/health", (_req, res) => {
 app.use("/auth", authRouter);
 app.use(mailsRouter);
 
+app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error(err);
+  const message = err instanceof Error ? err.message : "Internal Server Error";
+  res.status(500).json({ error: message });
+});
+
 export default app;

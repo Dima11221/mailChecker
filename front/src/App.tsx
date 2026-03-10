@@ -40,6 +40,7 @@ const App = () => {
     queryKey: mailboxesKeys.all,
     queryFn: getMailboxes,
     enabled: !!user,
+    refetchInterval: 15_000,
   });
 
   const [openEmailIds, setOpenEmailIds] = useState<number[]>([]);
@@ -109,11 +110,25 @@ const App = () => {
       await addMailbox(mailboxForm);
       setShowModal(false);
       setMailboxForm(defaultMailboxForm);
-      alert('Почта успешно добавлена!');
+      alert(
+        'Ящик добавлен. Проверка IMAP идёт в фоне: если host/логин/пароль неверны — ниже появится красное сообщение об ошибке (обновление каждые ~15 сек).'
+      );
       await queryClient.invalidateQueries({ queryKey: mailboxesKeys.all });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error adding mailbox', error);
-      alert('Ошибка при добавлении почты');
+      const msg =
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        error.response &&
+        typeof error.response === 'object' &&
+        'data' in error.response &&
+        error.response.data &&
+        typeof error.response.data === 'object' &&
+        'error' in error.response.data
+          ? String((error.response.data as { error: string }).error)
+          : 'Ошибка при добавлении почты';
+      alert(msg);
     }
   };
 
@@ -192,6 +207,33 @@ const App = () => {
               Удалить ящик
             </button>
           </div>
+          {(mb.last_error ||
+            mb.last_checked_at ||
+            (mb.consecutive_failures && mb.consecutive_failures > 0)) && (
+            <div className={style.mailboxStatus}>
+              {mb.last_error ? (
+                <div className={style.mailboxError}>
+                  <strong>Ошибка IMAP:</strong> {mb.last_error}
+                  {mb.consecutive_failures > 0 && (
+                    <span className={style.mailboxFailures}>
+                      {' '}
+                      (подряд неудач: {mb.consecutive_failures})
+                    </span>
+                  )}
+                </div>
+              ) : mb.last_success_at ? (
+                <div className={style.mailboxOk}>
+                  Последняя успешная проверка:{' '}
+                  {new Date(mb.last_success_at).toLocaleString()}
+                </div>
+              ) : null}
+              {mb.last_checked_at && !mb.last_error && !mb.last_success_at && (
+                <div className={style.mailboxMuted}>
+                  Проверялось: {new Date(mb.last_checked_at).toLocaleString()}
+                </div>
+              )}
+            </div>
+          )}
           <div className={style.tableContainer}>
             <table border={1} cellPadding={20} className={style.mailTable}>
               <thead>

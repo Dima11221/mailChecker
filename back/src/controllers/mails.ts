@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { AuthRequest } from "../authTypes";
 import { pool } from "../db/db";
 import { encryptSecret } from "../crypto";
+import { mailboxSchema } from "../validators";
 
 export const mails = async (req: Request, res: Response) => {
   const authReq = req as AuthRequest;
@@ -50,19 +51,12 @@ export const getMailBoxes = async (req: Request, res: Response) => {
 
 export const createMailbox = async (req: Request, res: Response) => {
   const authReq = req as AuthRequest;
-  const { email, host, port, secure, login, password, active } = req.body as {
-    email?: string;
-    host?: string;
-    port?: number;
-    secure?: boolean;
-    login?: string;
-    password?: string;
-    active?: boolean;
-  };
-
-  if (!email || !host || !port || !login || !password) {
-    return res.status(400).json({ error: "Invalid mailbox payload" });
+  const parsed = mailboxSchema.safeParse(req.body);
+  if (!parsed.success) {
+    const msg = parsed.error.issues.map((e: { message: string }) => e.message).join("; ") || "Неверные данные ящика";
+    return res.status(400).json({ error: msg });
   }
+  const { email, host, port, secure, login, password, active } = parsed.data;
 
   try {
     const encryptedPassword = encryptSecret(password);
