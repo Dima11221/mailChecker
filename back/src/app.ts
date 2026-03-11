@@ -2,13 +2,14 @@ import express from "express";
 import cors from "cors";
 import authRouter from "./routes/auth";
 import mailsRouter from "./routes/mails";
-import { FRONTEND_URL } from "./config/env";
+import { FRONTEND_ORIGINS } from "./config/env";
 
 const app = express();
 
+// Several origins: FRONTEND_URL=https://app.vercel.app,http://localhost:5173
 app.use(
   cors({
-    origin: FRONTEND_URL,
+    origin: FRONTEND_ORIGINS.length === 1 ? FRONTEND_ORIGINS[0] : FRONTEND_ORIGINS,
   })
 );
 
