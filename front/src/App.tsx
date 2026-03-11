@@ -35,12 +35,13 @@ const App = () => {
     queryKey: emailsKeys.all,
     queryFn: getEmails,
     enabled: !!user,
+    refetchInterval: 30_000,
   });
   const { data: mailboxes = [] } = useQuery({
     queryKey: mailboxesKeys.all,
     queryFn: getMailboxes,
     enabled: !!user,
-    refetchInterval: 15_000,
+    refetchInterval: 30_000,
   });
 
   const [openEmailIds, setOpenEmailIds] = useState<number[]>([]);
@@ -111,7 +112,7 @@ const App = () => {
       setShowModal(false);
       setMailboxForm(defaultMailboxForm);
       alert(
-        'Ящик добавлен. Проверка IMAP идёт в фоне: если host/логин/пароль неверны — ниже появится красное сообщение об ошибке (обновление каждые ~15 сек).'
+        'Ящик добавлен. Проверка IMAP идёт в фоне: если host/логин/пароль неверны — ниже появится красное сообщение об ошибке (обновление каждые ~30 сек).'
       );
       await queryClient.invalidateQueries({ queryKey: mailboxesKeys.all });
     } catch (error: unknown) {
