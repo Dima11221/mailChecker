@@ -1,0 +1,61 @@
+# Local / VPS: postgres + API + worker
+# cp .env.example .env && edit, then: docker compose up -d
+#
+# First run: apply your DB migrations/SQL against postgres (port 5432).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: mailchecker
+      POSTGRES_PASSWORD: mailchecker
+      POSTGRES_DB: mailchecker
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mailchecker -d mailchecker"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./back
+      dockerfile: Dockerfile
+    command: ["node", "dist/server.js"]
+    ports:
+      - "5001:5001"
+    environment:
+      PORT: "5001"
+      DATABASE_URL: postgresql://mailchecker:mailchecker@postgres:5432/mailchecker
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      JWT_SECRET: ${JWT_SECRET}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      MAIL_CHECK_CRON: ${MAIL_CHECK_CRON:-*/5 * * * *}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: ./back
+      dockerfile: Dockerfile
+    command: ["node", "dist/worker.js"]
+    environment:
+      DATABASE_URL: postgresql://mailchecker:mailchecker@postgres:5432/mailchecker
+      JWT_SECRET: ${JWT_SECRET}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      MAIL_CHECK_CRON: ${MAIL_CHECK_CRON:-*/5 * * * *}
+      MAX_UNSEEN_PER_MAILBOX: ${MAX_UNSEEN_PER_MAILBOX:-10}
+      MAIL_FOLDERS: ${MAIL_FOLDERS:-INBOX,Spam,Junk}
+      MAIL_SOURCES: ${MAIL_SOURCES:-banki.ru,irecommend.ru}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:

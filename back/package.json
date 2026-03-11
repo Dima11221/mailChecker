@@ -3,10 +3,13 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "build": "tsc",
     "dev:api": "ts-node-dev --respawn src/server.ts",
     "dev:worker": "ts-node-dev --respawn src/worker.ts",
     "start:api": "ts-node src/server.ts",
     "start:worker": "ts-node src/worker.ts",
+    "start:api:prod": "node dist/server.js",
+    "start:worker:prod": "node dist/worker.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
