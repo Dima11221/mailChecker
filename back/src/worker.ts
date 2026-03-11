@@ -1,7 +1,7 @@
 import cron from "node-cron";
 import { pool } from "./db/db";
-import { MAIL_CHECK_CRON } from "./env";
-import { checkMailboxes } from "./mailChecker/mailChecker";
+import { MAIL_CHECK_CRON } from "./config/env";
+import { checkMailboxes } from "./services/mailChecker";
 
 const LOCK_ID = 741852963;
 

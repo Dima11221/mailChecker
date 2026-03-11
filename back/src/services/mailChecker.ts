@@ -1,12 +1,12 @@
 import { ImapFlow } from "imapflow";
 import { pool } from "../db/db";
 import { simpleParser } from "mailparser";
-import { decryptSecret } from "../crypto";
+import { decryptSecret } from "../lib/crypto";
 import {
   MAIL_FOLDERS,
   MAIL_SOURCES,
   MAX_UNSEEN_PER_MAILBOX,
-} from "../env";
+} from "../config/env";
 
 type MailboxRow = {
   id: number;

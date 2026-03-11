@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import { JWT_SECRET } from "./env";
-import { AuthRequest, JwtUser } from "./authTypes";
+import { JWT_SECRET } from "../config/env";
+import { AuthRequest, JwtUser } from "../types/authTypes";
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;

@@ -2,8 +2,8 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { pool } from "../db/db";
-import { JWT_SECRET } from "../env";
-import { AuthRequest } from "../authTypes";
+import { JWT_SECRET } from "../config/env";
+import { AuthRequest } from "../types/authTypes";
 import { loginSchema } from "../validators";
 
 type UserRow = {

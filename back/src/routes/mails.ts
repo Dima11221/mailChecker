@@ -1,6 +1,6 @@
 import { Router } from "express";
 import {createMailbox, deleteMailbox, getMailBoxes, mails} from "../controllers/mails";
-import { requireAuth } from "../requireAuth";
+import { requireAuth } from "../middleware/requireAuth";
 
 const router = Router();
 

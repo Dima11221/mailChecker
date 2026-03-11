@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import authRouter from "./routes/auth";
 import mailsRouter from "./routes/mails";
-import { FRONTEND_URL } from "./env";
+import { FRONTEND_URL } from "./config/env";
 
 const app = express();
 

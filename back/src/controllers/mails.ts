@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { AuthRequest } from "../authTypes";
+import { AuthRequest } from "../types/authTypes";
 import { pool } from "../db/db";
-import { encryptSecret } from "../crypto";
+import { encryptSecret } from "../lib/crypto";
 import { mailboxSchema } from "../validators";
 
 export const mails = async (req: Request, res: Response) => {

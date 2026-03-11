@@ -1,5 +1,5 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "crypto";
-import { ENCRYPTION_KEY } from "./env";
+import { ENCRYPTION_KEY } from "../config/env";
 
 const PREFIX = "enc::";
 
