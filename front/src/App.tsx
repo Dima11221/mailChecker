@@ -1,5 +1,5 @@
 import './App.css'
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import style from "./style.module.scss"
 import {
@@ -7,13 +7,16 @@ import {
   getMailboxes,
   addMailbox,
   deleteMailbox,
+  getMe,
+  login,
+  logout,
   emailsKeys,
   mailboxesKeys,
   type IMailboxForm,
+  type IUser,
 } from "./api";
 
 const defaultMailboxForm: IMailboxForm = {
-  user_id: 1,
   email: '',
   host: '',
   port: 993,
@@ -25,24 +28,70 @@ const defaultMailboxForm: IMailboxForm = {
 
 const App = () => {
   const queryClient = useQueryClient();
+  const [user, setUser] = useState<IUser | null>(null);
+  const [authForm, setAuthForm] = useState({ email: "", password: "" });
+  const [authLoading, setAuthLoading] = useState(true);
   const { data: emails = [] } = useQuery({
     queryKey: emailsKeys.all,
     queryFn: getEmails,
+    enabled: !!user,
+    refetchInterval: 30_000,
   });
   const { data: mailboxes = [] } = useQuery({
     queryKey: mailboxesKeys.all,
     queryFn: getMailboxes,
+    enabled: !!user,
+    refetchInterval: 30_000,
   });
 
-  const [openEmailIds, setOpenEmailIds] = useState<string[]>([]);
+  const [openEmailIds, setOpenEmailIds] = useState<number[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [mailboxForm, setMailboxForm] = useState<IMailboxForm>(defaultMailboxForm);
 
-  const toggleOpen = (id: string) => {
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      setAuthLoading(false);
+      return;
+    }
+
+    getMe()
+      .then(({ user: currentUser }) => {
+        setUser(currentUser);
+      })
+      .catch(() => {
+        localStorage.removeItem("token");
+        setUser(null);
+      })
+      .finally(() => {
+        setAuthLoading(false);
+      });
+  }, []);
+
+  const toggleOpen = (id: number) => {
     setOpenEmailIds((prev) =>
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
-  }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const response = await login(authForm);
+      setUser(response.user);
+    } catch (error) {
+      console.error('Login error', error);
+      alert('Ошибка авторизации');
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
+    queryClient.clear();
+    setUser(null);
+  };
 
   const handleDeleteMailbox = async (id: number) => {
     if (!confirm('Удалить этот почтовый ящик? Письма из него тоже удалятся.')) return;
@@ -54,7 +103,7 @@ const App = () => {
       console.error('Error deleting mailbox', error);
       alert('Ошибка при удалении');
     }
-  }
+  };
 
   const handleAddMailbox = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,23 +111,82 @@ const App = () => {
       await addMailbox(mailboxForm);
       setShowModal(false);
       setMailboxForm(defaultMailboxForm);
-      alert('Почта успешно добавлена!');
+      alert(
+        'Ящик добавлен. Проверка IMAP идёт в фоне: если host/логин/пароль неверны — ниже появится красное сообщение об ошибке (обновление каждые ~30 сек).'
+      );
       await queryClient.invalidateQueries({ queryKey: mailboxesKeys.all });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error adding mailbox', error);
-      alert('Ошибка при добавлении почты');
+      const msg =
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        error.response &&
+        typeof error.response === 'object' &&
+        'data' in error.response &&
+        error.response.data &&
+        typeof error.response.data === 'object' &&
+        'error' in error.response.data
+          ? String((error.response.data as { error: string }).error)
+          : 'Ошибка при добавлении почты';
+      alert(msg);
     }
-  }
+  };
 
   const emailsByMailbox = mailboxes.map((mb) => ({
     mailbox: mb,
     emails: emails.filter((e) => e.mailbox_email === mb.email),
   }));
 
+  if (authLoading) {
+    return <div>Загрузка...</div>;
+  }
+
+  if (!user) {
+    return (
+      <div className={style.modalOverlay}>
+        <div className={style.modalContent}>
+          <h3>Вход</h3>
+          <form onSubmit={handleLogin}>
+            <div className={style.formGroup}>
+              <label>Email</label>
+              <input
+                type="email"
+                value={authForm.email}
+                onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })}
+                required
+              />
+            </div>
+            <div className={style.formGroup}>
+              <label>Пароль</label>
+              <input
+                type="password"
+                value={authForm.password}
+                onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })}
+                required
+              />
+            </div>
+            <div className={style.formActions}>
+              <button type="submit" className={style.submitBtn}>
+                Войти
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className={style.mailboxesSection}>
         <h2>Почтовые ящики</h2>
+        <div>
+          <span>{user.email}</span>
+          <button type="button" onClick={handleLogout}>
+            Выйти
+          </button>
+        </div>
         <button
           type="button"
           className={style.addBtn}
@@ -100,6 +208,33 @@ const App = () => {
               Удалить ящик
             </button>
           </div>
+          {(mb.last_error ||
+            mb.last_checked_at ||
+            (mb.consecutive_failures && mb.consecutive_failures > 0)) && (
+            <div className={style.mailboxStatus}>
+              {mb.last_error ? (
+                <div className={style.mailboxError}>
+                  <strong>Ошибка IMAP:</strong> {mb.last_error}
+                  {mb.consecutive_failures > 0 && (
+                    <span className={style.mailboxFailures}>
+                      {' '}
+                      (подряд неудач: {mb.consecutive_failures})
+                    </span>
+                  )}
+                </div>
+              ) : mb.last_success_at ? (
+                <div className={style.mailboxOk}>
+                  Последняя успешная проверка:{' '}
+                  {new Date(mb.last_success_at).toLocaleString()}
+                </div>
+              ) : null}
+              {mb.last_checked_at && !mb.last_error && !mb.last_success_at && (
+                <div className={style.mailboxMuted}>
+                  Проверялось: {new Date(mb.last_checked_at).toLocaleString()}
+                </div>
+              )}
+            </div>
+          )}
           <div className={style.tableContainer}>
             <table border={1} cellPadding={20} className={style.mailTable}>
               <thead>
@@ -213,7 +348,7 @@ const App = () => {
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
 export default App

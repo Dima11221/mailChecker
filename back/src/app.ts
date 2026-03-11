@@ -1,19 +1,30 @@
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
+import authRouter from "./routes/auth";
 import mailsRouter from "./routes/mails";
-import {startMailCron} from "./mailChecker/mailChecker";
-
-dotenv.config();
-const PORT = 5001;
+import { FRONTEND_URL } from "./config/env";
 
 const app = express();
-app.use(cors());
-app.use(express.json());
-app.use(mailsRouter);
 
-app.listen(PORT, () => {
-  console.log("Server running on port: " + PORT);
+app.use(
+  cors({
+    origin: FRONTEND_URL,
+  })
+);
+
+app.use(express.json());
+
+app.get("/health", (_req, res) => {
+  res.json({ ok: true });
 });
 
-startMailCron();
+app.use("/auth", authRouter);
+app.use(mailsRouter);
+
+app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error(err);
+  const message = err instanceof Error ? err.message : "Internal Server Error";
+  res.status(500).json({ error: message });
+});
+
+export default app;
