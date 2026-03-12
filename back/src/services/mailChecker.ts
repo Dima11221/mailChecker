@@ -6,6 +6,8 @@ import {
   MAIL_FOLDERS,
   MAIL_SOURCES,
   MAX_UNSEEN_PER_MAILBOX,
+  IMAP_TLS_REJECT_UNAUTHORIZED,
+  IMAP_TLS_CA,
 } from "../config/env";
 
 type MailboxRow = {
@@ -139,7 +141,11 @@ export async function checkMailboxes() {
           user: mailbox.login,
           pass: decryptSecret(mailbox.password_encrypted)
         },
-        socketTimeout: 300000
+        socketTimeout: 300000,
+        tls: {
+          rejectUnauthorized: !IMAP_TLS_REJECT_UNAUTHORIZED,
+          ca: IMAP_TLS_CA,
+        }
       });
 
       await client.connect();
