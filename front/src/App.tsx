@@ -52,7 +52,7 @@ const App = () => {
     const token = localStorage.getItem("token");
 
     if (!token) {
-      setAuthLoading(false);
+      queueMicrotask(() => setAuthLoading(false));
       return;
     }
 
@@ -138,6 +138,16 @@ const App = () => {
     emails: emails.filter((e) => e.mailbox_email === mb.email),
   }));
 
+  const emailsByMailboxSorted = [...emailsByMailbox].sort((a, b) => {
+    const lastA = a.emails.length
+    ? Math.max(...a.emails.map((e) => new Date(e.received_at).getTime())) : 0;
+
+    const lastB = b.emails.length
+    ? Math.max(...b.emails.map((e) => new Date(e.received_at).getTime())) : 0;
+
+    return lastB - lastA;
+  })
+
   if (authLoading) {
     return <div>Загрузка...</div>;
   }
@@ -196,7 +206,7 @@ const App = () => {
         </button>
       </div>
 
-      {emailsByMailbox.map(({ mailbox: mb, emails: mailboxEmails }) => (
+      {emailsByMailboxSorted.map(({ mailbox: mb, emails: mailboxEmails }) => (
         <div key={mb.id} className={style.mailboxBlock}>
           <div className={style.mailboxHeader}>
             <h3>{mb.email}</h3>
