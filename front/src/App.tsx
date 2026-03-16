@@ -304,13 +304,43 @@ const App = () => {
               </div>
               <div className={style.formGroup}>
                 <label>IMAP Host</label>
-                <input 
-                  type="text" 
-                  value={mailboxForm.host}
-                  onChange={(e) => setMailboxForm({...mailboxForm, host: e.target.value})}
-                  placeholder="imap.mail.ru или imap.yandex.ru"
-                  required 
-                />
+                <div>
+                  <label>
+                    <input
+                      type='radio'
+                      value='imap.mail.ru'
+                      name='imapHost'
+                      checked={mailboxForm.host === 'imap.mail.ru'}
+                      onChange={(e) => setMailboxForm({...mailboxForm, host: e.target.value})}
+                      required
+                      style={{width:'18px'}}
+                    />
+                    imap.mail.ru
+                  </label>
+                </div>
+
+                <div>
+                  <label>
+                    <input
+                      type='radio'
+                      value='imap.yandex.ru'
+                      name='imapHost'
+                      checked={mailboxForm.host === 'imap.yandex.ru'}
+                      onChange={(e) => setMailboxForm({...mailboxForm, host: e.target.value})}
+                      required
+                      style={{width:'18px'}}
+                    />
+                    imap.yandex.ru
+                  </label>
+                </div>
+
+                {/*<input*/}
+                {/*  type="text"*/}
+                {/*  value={mailboxForm.host}*/}
+                {/*  onChange={(e) => setMailboxForm({...mailboxForm, host: e.target.value})}*/}
+                {/*  placeholder="imap.mail.ru или imap.yandex.ru"*/}
+                {/*  required*/}
+                {/*/>*/}
               </div>
               <div className={style.formGroup}>
                 <label>Порт</label>
