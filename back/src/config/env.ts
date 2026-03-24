@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import fs from "node:fs";
 
 dotenv.config();
 
@@ -31,3 +32,9 @@ export const MAIL_SOURCES = (process.env.MAIL_SOURCES ?? "banki.ru,irecommend.ru
   .split(",")
   .map((value) => value.trim())
   .filter(Boolean);
+
+export const IMAP_TLS_REJECT_UNAUTHORIZED = process.env.IMAP_TLS_REJECT_UNAUTHORIZED === "true";
+
+export const IMAP_TLS_CA = process.env.IMAP_TLS_CA && fs.existsSync(process.env.IMAP_TLS_CA)
+  ? fs.readFileSync(process.env.IMAP_TLS_CA)
+  : undefined;
