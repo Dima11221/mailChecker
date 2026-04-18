@@ -13,7 +13,6 @@ function requireEnv(name: string): string {
 
 export const PORT = Number(process.env.PORT ?? 5001);
 export const DATABASE_URL = requireEnv("DATABASE_URL");
-/** Single origin (first) for redirects etc.; full list for CORS — comma-separated in FRONTEND_URL */
 const FRONTEND_URL_RAW = process.env.FRONTEND_URL ?? "http://localhost:5173";
 export const FRONTEND_URL = FRONTEND_URL_RAW.split(",")[0].trim();
 export const FRONTEND_ORIGINS = FRONTEND_URL_RAW.split(",")

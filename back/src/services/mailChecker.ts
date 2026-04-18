@@ -20,10 +20,7 @@ type MailboxRow = {
 
 const LAST_ERROR_MAX = 1200;
 
-/**
- * ImapFlow часто кидает Error с message "Command failed", но на объекте есть
- * authenticationFailed, responseText от сервера, code сокета — собираем понятный текст для UI.
- */
+
 function formatImapError(mailbox: MailboxRow, error: unknown): string {
   const e = error as Record<string, unknown> & { message?: string };
   const parts: string[] = [];
