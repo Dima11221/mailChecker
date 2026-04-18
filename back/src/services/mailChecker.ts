@@ -120,7 +120,7 @@ export async function checkMailboxes() {
   );
 
   console.log(
-    "Found mailboxes:",
+    "Найдено почтовых ящиков:",
     mailboxes.length,
     mailboxes.map((mailbox) => mailbox.email).join(", ")
   );
@@ -129,7 +129,7 @@ export async function checkMailboxes() {
     let client: ImapFlow | null = null;
 
     try {
-      console.log("Processing mailbox:", mailbox.email);
+      console.log("Обработка почтового ящика:", mailbox.email);
 
       client = new ImapFlow({
         host: mailbox.host,
@@ -224,7 +224,7 @@ export async function checkMailboxes() {
         [mailbox.id]
       );
 
-      console.log("Done mailbox:", mailbox.email);
+      console.log("Готовый почтовый ящик:", mailbox.email);
     } catch (error: unknown) {
       const lastError = formatImapError(mailbox, error);
       await pool.query(
@@ -238,7 +238,7 @@ export async function checkMailboxes() {
         [mailbox.id, lastError]
       );
 
-      console.error("Error checking mailbox:", mailbox.email, error);
+      console.error("Ошибка при проверке почтового ящика:", mailbox.email, error);
     } finally {
       if (client) {
         try {
