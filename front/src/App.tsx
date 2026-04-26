@@ -1,7 +1,6 @@
 import './App.css'
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import style from "./style.module.scss"
 import {
   getEmails,
   getMailboxes,
@@ -15,8 +14,11 @@ import {
   type IMailboxForm,
   type IUser,
 } from "./api";
-import MailContainer from "./containers/MailContainer/MailContainer.tsx";
 import ModalForm from "./containers/ModalForm/ModalForm.tsx";
+import MailBoxHead from "./containers/MailBoxHead/MailBoxHead.tsx";
+import AuthUser from "./containers/AuthUser/AuthUser.tsx";
+import * as React from "react";
+import MailBoxInfo from "./containers/MailBoxInfo/MailBoxInfo.tsx";
 
 const defaultMailboxForm: IMailboxForm = {
   email: '',
@@ -156,105 +158,30 @@ const App = () => {
 
   if (!user) {
     return (
-      <div className={style.modalOverlay}>
-        <div className={style.modalContent}>
-          <h3>Вход</h3>
-          <form onSubmit={handleLogin}>
-            <div className={style.formGroup}>
-              <label>Email</label>
-              <input
-                type="email"
-                value={authForm.email}
-                onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })}
-                required
-              />
-            </div>
-            <div className={style.formGroup}>
-              <label>Пароль</label>
-              <input
-                type="password"
-                value={authForm.password}
-                onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })}
-                required
-              />
-            </div>
-            <div className={style.formActions}>
-              <button type="submit" className={style.submitBtn}>
-                Войти
-              </button>
-            </div>
-          </form>
-        </div>
+      <div>
+        <AuthUser
+          handleLogin={handleLogin}
+          authForm={authForm}
+          setAuthForm={setAuthForm}
+        />
       </div>
     );
   }
 
   return (
     <div>
-      <div className={style.mailboxesSection}>
-        <h2>Почтовые ящики</h2>
-        <div>
-          <span>{user.email}</span>
-          <button type="button" onClick={handleLogout}>
-            Выйти
-          </button>
-        </div>
-        <button
-          type="button"
-          className={style.addBtn}
-          onClick={() => setShowModal(true)}
-        >
-          Добавить почту для отслеживания
-        </button>
-      </div>
+      <MailBoxHead
+        handleLogout={handleLogout}
+        setShowModal={setShowModal}
+        user={user}
+      />
 
-      {emailsByMailboxSorted.map(({ mailbox: mb, emails: mailboxEmails }) => (
-        <div key={mb.id} className={style.mailboxBlock}>
-          <div className={style.mailboxHeader}>
-            <h3>{mb.email}</h3>
-            <button
-              type="button"
-              className={style.deleteBtn}
-              onClick={() => handleDeleteMailbox(mb.id)}
-            >
-              Удалить ящик
-            </button>
-          </div>
-          {(mb.last_error ||
-            mb.last_checked_at ||
-            (mb.consecutive_failures && mb.consecutive_failures > 0)) && (
-            <div className={style.mailboxStatus}>
-              {mb.last_error ? (
-                <div className={style.mailboxError}>
-                  <strong>Ошибка IMAP:</strong> {mb.last_error}
-                  {mb.consecutive_failures > 0 && (
-                    <span className={style.mailboxFailures}>
-                      {' '}
-                      (подряд неудач: {mb.consecutive_failures})
-                    </span>
-                  )}
-                </div>
-              ) : mb.last_success_at ? (
-                <div className={style.mailboxOk}>
-                  Последняя успешная проверка:{' '}
-                  {new Date(mb.last_success_at).toLocaleString()}
-                </div>
-              ) : null}
-              {mb.last_checked_at && !mb.last_error && !mb.last_success_at && (
-                <div className={style.mailboxMuted}>
-                  Проверялось: {new Date(mb.last_checked_at).toLocaleString()}
-                </div>
-              )}
-            </div>
-          )}
-
-          <MailContainer
-            mailboxEmails={mailboxEmails}
-            toggleOpen={toggleOpen}
-            openEmailIds={openEmailIds}
-          />
-        </div>
-      ))}
+      <MailBoxInfo
+        toggleOpen={toggleOpen}
+        openEmailIds={openEmailIds}
+        emailsByMailboxSorted={emailsByMailboxSorted}
+        handleDeleteMailbox={handleDeleteMailbox}
+      />
 
       <ModalForm
         showModal={showModal}
