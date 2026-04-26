@@ -3,6 +3,7 @@ import cors from "cors";
 import authRouter from "./routes/auth";
 import mailsRouter from "./routes/mails";
 import { FRONTEND_ORIGINS } from "./config/env";
+import cookieParser from "cookie-parser";
 
 const app = express();
 
@@ -10,9 +11,11 @@ const app = express();
 app.use(
   cors({
     origin: FRONTEND_ORIGINS.length === 1 ? FRONTEND_ORIGINS[0] : FRONTEND_ORIGINS,
+    credentials: true,
   })
 );
 
+app.use(cookieParser());
 app.use(express.json());
 
 app.get("/health", (_req, res) => {

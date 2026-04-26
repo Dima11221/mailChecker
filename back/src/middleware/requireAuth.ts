@@ -6,11 +6,14 @@ import { AuthRequest, JwtUser } from "../types/authTypes";
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader?.startsWith("Bearer ")) {
+  const tokenFromCookie = (req as any).cookies?.access_token as string | undefined;
+  const tokenFromHeader = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : undefined;
+
+  const token = tokenFromCookie ?? tokenFromHeader;
+
+  if (!token) {
     return res.status(401).json({ error: "Unauthorized" });
   }
-
-  const token = authHeader.slice("Bearer ".length);
 
   try {
     const payload = jwt.verify(token, JWT_SECRET) as JwtUser;

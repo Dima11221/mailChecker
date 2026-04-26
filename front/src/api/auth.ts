@@ -3,7 +3,6 @@ import type { ILoginPayload, ILoginResponse, IUser } from "./types";
 
 export async function login(payload: ILoginPayload): Promise<ILoginResponse> {
   const { data } = await api.post<ILoginResponse>("/auth/login", payload);
-  localStorage.setItem("token", data.token);
   return data;
 }
 
@@ -12,6 +11,6 @@ export async function getMe(): Promise<{ user: IUser }> {
   return data;
 }
 
-export function logout(): void {
-  localStorage.removeItem("token");
+export async function logout(): Promise<void> {
+  await api.post("/auth/logout");
 }

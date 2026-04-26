@@ -19,18 +19,9 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 	// 1) Автовосстановление сессии при старте приложения
 	useEffect(() => {
-		const token = localStorage.getItem("token");
-		if (!token) {
-			queueMicrotask(() => setLoading(false));
-			return;
-		}
-
 		getMe()
 			.then(({ user }) => setUser(user))
-			.catch(() => {
-				localStorage.removeItem("token");
-				setUser(null);
-			})
+			.catch(() => {setUser(null);})
 			.finally(() => queueMicrotask(() => setLoading(false)));
 	}, []);
 

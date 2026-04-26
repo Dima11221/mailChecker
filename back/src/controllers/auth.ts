@@ -45,8 +45,17 @@ export async function login(req: Request, res: Response) {
     { expiresIn: "12h" }
   );
 
+  const isProd = process.env.NODE_ENV === "production";
+
+  res.cookie("access_token", token, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : 'lax',
+    path: "/",
+    maxAge: 12 * 60 * 60 * 1000,
+  });
+
   return res.json({
-    token,
     user: {
       id: user.id,
       email: user.email,
@@ -77,4 +86,17 @@ export async function me(req: Request, res: Response) {
   }
 
   return res.json({ user });
+}
+
+export async function logout(req: Request, res: Response) {
+  const isProd = process.env.NODE_ENV === "production";
+
+  res.clearCookie("access_token", {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : 'lax',
+    path: "/",
+  });
+
+  return res.json({ ok: true });
 }
