@@ -7,14 +7,12 @@ import {
 	deleteMailbox,
 	emailsKeys,
 	getEmails,
-	getMailboxes, getMe, type IMailboxForm,
-	type IUser, login,
-	logout,
+	getMailboxes, type IMailboxForm,
 	mailboxesKeys
 } from "../../api";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
-import {useEffect, useState} from "react";
-import AuthUser from "../../containers/AuthUser/AuthUser.tsx";
+import {useState} from "react";
+import {useAuth} from "../../auth/useAuth.ts";
 
 
 
@@ -31,9 +29,7 @@ const defaultMailboxForm: IMailboxForm = {
 const Razmeshenie = () => {
 
 	const queryClient = useQueryClient();
-	const [user, setUser] = useState<IUser | null>(null);
-	const [authForm, setAuthForm] = useState({ email: "", password: "" });
-	const [authLoading, setAuthLoading] = useState(true);
+	const { user } = useAuth();
 	const { data: emails = [] } = useQuery({
 		queryKey: emailsKeys.all,
 		queryFn: getEmails,
@@ -51,49 +47,10 @@ const Razmeshenie = () => {
 	const [showModal, setShowModal] = useState(false);
 	const [mailboxForm, setMailboxForm] = useState<IMailboxForm>(defaultMailboxForm);
 
-	useEffect(() => {
-		const token = localStorage.getItem("token");
-
-		if (!token) {
-			queueMicrotask(() => setAuthLoading(false));
-			return;
-		}
-
-		getMe()
-			.then(({ user: currentUser }) => {
-				setUser(currentUser);
-			})
-			.catch(() => {
-				localStorage.removeItem("token");
-				setUser(null);
-			})
-			.finally(() => {
-				setAuthLoading(false);
-			});
-	}, []);
-
 	const toggleOpen = (id: number) => {
 		setOpenEmailIds((prev) =>
 			prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
 		);
-	};
-
-	const handleLogin = async (e: React.FormEvent) => {
-		e.preventDefault();
-
-		try {
-			const response = await login(authForm);
-			setUser(response.user);
-		} catch (error) {
-			console.error('Login error', error);
-			alert('Ошибка авторизации');
-		}
-	};
-
-	const handleLogout = () => {
-		logout();
-		queryClient.clear();
-		setUser(null);
 	};
 
 	const handleDeleteMailbox = async (id: number) => {
@@ -151,28 +108,11 @@ const Razmeshenie = () => {
 		return lastB - lastA;
 	})
 
-	if (authLoading) {
-		return <div>Загрузка...</div>;
-	}
-
-	if (!user) {
-		return (
-			<div>
-				<AuthUser
-					handleLogin={handleLogin}
-					authForm={authForm}
-					setAuthForm={setAuthForm}
-				/>
-			</div>
-		);
-	}
 
 	return (
 		<div>
 			<MailBoxHead
-				handleLogout={handleLogout}
 				setShowModal={setShowModal}
-				user={user}
 			/>
 
 			<MailBoxInfo

@@ -1,35 +1,46 @@
 import './App.css'
 
-import {BrowserRouter as Router, Route, Routes} from "react-router-dom";
+import {BrowserRouter as Router, Navigate, Route, Routes} from "react-router-dom";
 import MainPage from "./pages/MainPage/MainPage.tsx";
-import Header from "./layout/Header/Header.tsx";
 import Razmeshenie from "./pages/Razmeshenie/Razmeshenie.tsx";
 import Sozdanie from "./pages/Sozdanie/Sozdanie.tsx";
+import AuthProvider from "./auth/AuthContext.tsx";
+import LogiPage from "./pages/LogiPage/LoginPage.tsx";
+import ProtectedRoute from "./auth/ProtectedRoute.tsx";
+import AppLayout from "./layout/AppLayout.tsx";
 
 
 const App = () => {
 
   return (
-    <Router>
-      <div>
-        <Header />
+    <AuthProvider>
+      <Router>
         <Routes>
           <Route
-            path="/"
-            element={<MainPage />}
+            path="/login"
+            element={<LogiPage />}
           />
-          <Route
-            path="/razmeshenie"
-            element={<Razmeshenie />}
-          />
-          <Route
-            path="/sozdanie"
-            element={<Sozdanie />}
-          />
-        </Routes>
-      </div>
+          <Route element={<ProtectedRoute />}>
+            <Route element={<AppLayout />}>
+              <Route
+                path="/"
+                element={<MainPage />}
+              />
+              <Route
+                path="/razmeshenie"
+                element={<Razmeshenie />}
+              />
+              <Route
+                path="/sozdanie"
+                element={<Sozdanie />}
+              />
+            </Route>
+          </Route>
 
-    </Router>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 };
 
