@@ -6,6 +6,7 @@ import { mailboxSchema } from "../validators";
 
 export const mails = async (req: Request, res: Response) => {
   const authReq = req as AuthRequest;
+  const category = req.query.category;
   const limit = Math.min(Number(req.query.limit ?? 200), 500);
 
   const { rows } = await pool.query(
@@ -19,10 +20,10 @@ export const mails = async (req: Request, res: Response) => {
        e.received_at
      FROM emails e
      JOIN mailboxes m ON m.id = e.mailbox_id
-     WHERE m.user_id = $1
+     WHERE m.user_id = $1 AND m.category = $2
      ORDER BY e.received_at DESC
-     LIMIT $2`,
-    [authReq.user.id, limit]
+     LIMIT $3`,
+    [authReq.user.id, category ,limit]
   );
 
   res.json(rows);
@@ -30,6 +31,7 @@ export const mails = async (req: Request, res: Response) => {
 
 export const getMailBoxes = async (req: Request, res: Response) => {
   const authReq = req as AuthRequest;
+  const category = req.query.category;
 
   const { rows } = await pool.query(
     `SELECT
@@ -39,11 +41,12 @@ export const getMailBoxes = async (req: Request, res: Response) => {
        last_checked_at,
        last_success_at,
        last_error,
-       consecutive_failures
+       consecutive_failures,
+       category
      FROM mailboxes
-     WHERE user_id = $1
+     WHERE user_id = $1 AND category = $2
      ORDER BY id`,
-    [authReq.user.id]
+    [authReq.user.id, category]
   );
 
   res.json(rows);
@@ -56,16 +59,16 @@ export const createMailbox = async (req: Request, res: Response) => {
     const msg = parsed.error.issues.map((e: { message: string }) => e.message).join("; ") || "Неверные данные ящика";
     return res.status(400).json({ error: msg });
   }
-  const { email, host, port, secure, login, password, active } = parsed.data;
+  const { email, host, port, secure, login, password, active, category } = parsed.data;
 
   try {
     const encryptedPassword = encryptSecret(password);
 
     const { rows } = await pool.query(
       `INSERT INTO mailboxes
-        (user_id, email, host, port, secure, login, password_encrypted, active, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
-       RETURNING id, email, active, last_checked_at, last_success_at, last_error, consecutive_failures`,
+        (user_id, email, host, port, secure, login, password_encrypted, active, category, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+       RETURNING id, email, active, last_checked_at, last_success_at, last_error, consecutive_failures, category`,
       [
         authReq.user.id,
         email,
@@ -74,7 +77,8 @@ export const createMailbox = async (req: Request, res: Response) => {
         secure ?? true,
         login,
         encryptedPassword,
-        active ?? true
+        active ?? true,
+        category
       ]
     );
 

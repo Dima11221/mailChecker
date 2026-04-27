@@ -5,8 +5,8 @@ export const mailboxesKeys = {
   all: ['mailboxes'] as const,
 };
 
-export async function getMailboxes(): Promise<IMailbox[]> {
-  const { data } = await api.get<IMailbox[]>('/mailboxes');
+export async function getMailboxes(category: string): Promise<IMailbox[]> {
+  const { data } = await api.get<IMailbox[]>(`/mailboxes?category=${category}`);
   return data;
 }
 

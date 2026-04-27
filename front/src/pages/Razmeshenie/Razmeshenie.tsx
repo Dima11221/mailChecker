@@ -14,7 +14,7 @@ import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {useState} from "react";
 import {useAuth} from "../../auth/useAuth.ts";
 
-
+const defaultCategoryForPage = 'razmeshenie'
 
 const defaultMailboxForm: IMailboxForm = {
 	email: '',
@@ -24,6 +24,7 @@ const defaultMailboxForm: IMailboxForm = {
 	login: '',
 	password: '',
 	active: true,
+	category: defaultCategoryForPage,
 };
 
 const Razmeshenie = () => {
@@ -31,14 +32,14 @@ const Razmeshenie = () => {
 	const queryClient = useQueryClient();
 	const { user } = useAuth();
 	const { data: emails = [] } = useQuery({
-		queryKey: emailsKeys.all,
-		queryFn: getEmails,
+		queryKey: ['emails', defaultCategoryForPage],
+		queryFn: () => getEmails(defaultCategoryForPage),
 		enabled: !!user,
 		refetchInterval: 30_000,
 	});
 	const { data: mailboxes = [] } = useQuery({
-		queryKey: mailboxesKeys.all,
-		queryFn: getMailboxes,
+		queryKey: ['mailboxes', defaultCategoryForPage],
+		queryFn: () => getMailboxes(defaultCategoryForPage),
 		enabled: !!user,
 		refetchInterval: 30_000,
 	});
@@ -93,9 +94,12 @@ const Razmeshenie = () => {
 		}
 	};
 
+	const allowedSources = ['banki.ru', 'irecommend.ru'];
+	const filteredEmails = emails.filter((e) => allowedSources.includes(e.source));
+
 	const emailsByMailbox = mailboxes.map((mb) => ({
 		mailbox: mb,
-		emails: emails.filter((e) => e.mailbox_email === mb.email),
+		emails: filteredEmails.filter((e) => e.mailbox_email === mb.email),
 	}));
 
 	const emailsByMailboxSorted = [...emailsByMailbox].sort((a, b) => {

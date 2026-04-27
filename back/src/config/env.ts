@@ -26,7 +26,7 @@ export const MAIL_FOLDERS = ("INBOX,Spam,Junk")
   .split(",")
   .map((value) => value.trim())
   .filter(Boolean);
-export const MAIL_SOURCES = ("banki.ru,irecommend.ru")
+export const MAIL_SOURCES = ("banki.ru,irecommend.ru,zoon.ru,2gis.ru,id.yandex.ru")
   .split(",")
   .map((value) => value.trim())
   .filter(Boolean);

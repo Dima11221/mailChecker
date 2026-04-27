@@ -27,6 +27,7 @@ export const mailboxSchema = z.object({
   login: z.string().min(1, "Укажите логин"),
   password: z.string().min(1, "Укажите пароль приложения"),
   active: z.boolean().default(true),
+  category: z.string().min(1),
 });
 
 export type LoginBody = z.infer<typeof loginSchema>;
