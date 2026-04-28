@@ -13,6 +13,8 @@ const hostRefine = (host: string) => {
   return tld.length >= 2;
 };
 
+const clientsSchema = z.array(z.string().trim().min(1).max(150, "Слишком длинное имя клиента")).max(50, "Слишком много клиентов").default([]);
+
 export const mailboxSchema = z.object({
   email: z.string().email("Некорректный email"),
   host: z
@@ -28,7 +30,13 @@ export const mailboxSchema = z.object({
   password: z.string().min(1, "Укажите пароль приложения"),
   active: z.boolean().default(true),
   category: z.string().min(1),
+  clients: clientsSchema,
+});
+
+export const mailBoxPathSchema = z.object({
+  clients: clientsSchema.optional(),
 });
 
 export type LoginBody = z.infer<typeof loginSchema>;
 export type MailboxBody = z.infer<typeof mailboxSchema>;
+export type MailboxPatchBody = z.infer<typeof mailBoxPathSchema>;

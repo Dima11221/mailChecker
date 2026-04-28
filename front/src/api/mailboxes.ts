@@ -17,3 +17,7 @@ export async function addMailbox(form: IMailboxForm): Promise<void> {
 export async function deleteMailbox(id: number): Promise<void> {
   await api.delete(`/mailboxes/${id}`);
 }
+
+export async function updateMailboxClients(id: number, clients: string[]): Promise<void> {
+  await api.patch(`/mailboxes/${id}`, { clients });
+}

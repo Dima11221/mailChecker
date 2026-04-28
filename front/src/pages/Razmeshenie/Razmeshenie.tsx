@@ -25,6 +25,7 @@ const defaultMailboxForm: IMailboxForm = {
 	password: '',
 	active: true,
 	category: defaultCategoryForPage,
+	clients: [],
 };
 
 const Razmeshenie = () => {

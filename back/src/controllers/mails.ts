@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { AuthRequest } from "../types/authTypes";
 import { pool } from "../db/db";
 import { encryptSecret } from "../lib/crypto";
-import { mailboxSchema } from "../validators";
+import {mailBoxPathSchema, mailboxSchema} from "../validators";
 
 export const mails = async (req: Request, res: Response) => {
   const authReq = req as AuthRequest;
@@ -42,7 +42,8 @@ export const getMailBoxes = async (req: Request, res: Response) => {
        last_success_at,
        last_error,
        consecutive_failures,
-       category
+       category,
+       clients
      FROM mailboxes
      WHERE user_id = $1 AND category = $2
      ORDER BY id`,
@@ -59,16 +60,16 @@ export const createMailbox = async (req: Request, res: Response) => {
     const msg = parsed.error.issues.map((e: { message: string }) => e.message).join("; ") || "Неверные данные ящика";
     return res.status(400).json({ error: msg });
   }
-  const { email, host, port, secure, login, password, active, category } = parsed.data;
+  const { email, host, port, secure, login, password, active, category, clients } = parsed.data;
 
   try {
     const encryptedPassword = encryptSecret(password);
 
     const { rows } = await pool.query(
       `INSERT INTO mailboxes
-        (user_id, email, host, port, secure, login, password_encrypted, active, category, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
-       RETURNING id, email, active, last_checked_at, last_success_at, last_error, consecutive_failures, category`,
+        (user_id, email, host, port, secure, login, password_encrypted, active, category, clients, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
+       RETURNING id, email, active, last_checked_at, last_success_at, last_error, consecutive_failures, category, clients`,
       [
         authReq.user.id,
         email,
@@ -78,7 +79,8 @@ export const createMailbox = async (req: Request, res: Response) => {
         login,
         encryptedPassword,
         active ?? true,
-        category
+        category,
+        clients
       ]
     );
 
@@ -108,3 +110,52 @@ export const deleteMailbox = async (req: Request, res: Response) => {
 
   res.status(204).send();
 };
+
+function normalizeClients(raw: string[]): string[] {
+  const cleaned = raw.map(s => s.trim()).filter(Boolean);
+  return Array.from(new Set(cleaned));
+}
+
+export const updateMailbox = async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) {
+    return res.status(400).json({ error: "Некорректный id почтового ящика" });
+  }
+
+  const parsed = mailBoxPathSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "Неверные данные для обновления" });
+  }
+  if (parsed.data.clients === undefined) {
+    return res.status(400).json({ error: "Нет полей для обновления" });
+  }
+  const clients = normalizeClients(parsed.data.clients ?? []);
+
+  try {
+    const { rows } = await pool.query(
+      `UPDATE mailboxes
+      SET clients = $3,
+          updated_at = NOW()
+      WHERE id = $1 AND user_id = $2
+      RETURNING id,
+                email,
+                active,
+                last_checked_at,
+                last_success_at,
+                last_error,
+                consecutive_failures,
+                category,
+                clients`,
+      [id, authReq.user.id, clients],
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Почтовый ящик не найден" });
+    }
+
+    return res.status(200).json(rows[0]);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+}

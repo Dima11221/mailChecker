@@ -1,6 +1,9 @@
 import style from "../../style.module.scss";
 import MailContainer from "../MailContainer/MailContainer.tsx";
-import type {IEmails, IMailbox} from "../../api";
+import {type IEmails, type IMailbox, mailboxesKeys} from "../../api";
+import {useState} from "react";
+import {updateMailboxClients} from "../../api/mailboxes.ts";
+import {useQueryClient} from "@tanstack/react-query";
 
 interface IMailBoxInfoProps {
 	toggleOpen: (id: number) => void;
@@ -13,13 +16,87 @@ interface IMailBoxInfoProps {
 }
 
 const MailBoxInfo = ({toggleOpen, openEmailIds, emailsByMailboxSorted, handleDeleteMailbox}: IMailBoxInfoProps) => {
+	const [editingMailBoxId, setEditingMailBoxId] = useState<number | null>(null);
+	const [clientsDraft, setClientsDraft] = useState<string>('');
+	const [saving, setSaving] = useState<boolean>(false);
+
+	const queryClient = useQueryClient();
+
+	const handleStartEditingClients = (mb: IMailbox) => {
+		setEditingMailBoxId(mb.id);
+		setClientsDraft((mb.clients ?? []).join(','));
+	};
+
+	const handleEndEditingClients = () => {
+		setEditingMailBoxId(null);
+		setClientsDraft('');
+	};
+
+	const parseClientsDraft = (draft: string) => {
+		const items = draft.split(',').map((item) => item.trim()).filter(Boolean);
+		console.log("items", items);
+		return Array.from(new Set(items));
+	};
+
+	const handleSaveClients = async (mailboxId: number) => {
+		const clients = parseClientsDraft(clientsDraft);
+
+		try {
+			setSaving(true);
+			await updateMailboxClients(mailboxId, clients);
+			await queryClient.invalidateQueries({ queryKey: mailboxesKeys.all });
+			handleEndEditingClients();
+		} catch (e) {
+			console.log(e);
+		} finally {
+			setSaving(false);
+		}
+	}
 
 	return (
 		<div>
 			{emailsByMailboxSorted.map(({ mailbox: mb, emails: mailboxEmails }) => (
 				<div key={mb.id} className={style.mailboxBlock}>
 					<div className={style.mailboxHeader}>
-						<h3>{mb.email}</h3>
+						<div
+							className={style.flexGap}
+						>
+							<h3>{mb.email}</h3>
+
+							{editingMailBoxId === mb.id ? (
+								<>
+									<input
+										value={clientsDraft}
+										onChange={e => setClientsDraft(e.currentTarget.value)}
+										placeholder="Клиенты через запятую"
+										disabled={saving}
+										style={{ minWidth: 320 }}
+									/>
+									<button
+										type="button"
+										onClick={() => handleSaveClients(mb.id)}
+										disabled={saving}
+									>
+										Сохранить
+									</button>
+									<button
+										type="button"
+										onClick={handleEndEditingClients}
+										disabled={saving}
+									>
+										Отмена
+									</button>
+								</>
+							) : (
+								<button
+									type="button"
+									onClick={() => handleStartEditingClients(mb)}
+								>
+									Клиенты: {mb.clients.length ? mb.clients.join(",") : 'Пока нет клиентов'}
+								</button>
+							)}
+
+						</div>
 						<button
 							type="button"
 							className={style.deleteBtn}

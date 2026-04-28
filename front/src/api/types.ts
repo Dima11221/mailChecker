@@ -17,6 +17,7 @@ export interface IMailbox {
   last_error: string | null;
   consecutive_failures: number;
   category: string;
+  clients: string[];
 }
 
 export interface IMailboxForm {
@@ -28,6 +29,7 @@ export interface IMailboxForm {
   password: string;
   active: boolean;
   category: string;
+  clients: string[];
 }
 
 export interface IUser {

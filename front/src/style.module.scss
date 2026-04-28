@@ -158,6 +158,13 @@
   }
 }
 
+.flexGap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
 .mailboxStatus {
   padding: 10px 16px;
   border-bottom: 1px solid #e0e0e0;

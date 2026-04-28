@@ -69,6 +69,21 @@ const ModalForm = ({showModal, handleAddMailbox, mailboxForm, setMailboxForm, se
 						/>
 					</div>
 					<div className={style.formGroup}>
+						<label>Клиент(ы)</label>
+						<input
+							type="text"
+							value={mailboxForm.clients}
+							onChange={(e) => {
+								const value = e.target.value.split(',').map(i => i.trim());
+								const unique = Array.from(new Set(value)).filter(Boolean);
+								console.log("unique", unique);
+
+								setMailboxForm({...mailboxForm, clients: unique})
+							}}
+							required
+						/>
+					</div>
+					<div className={style.formGroup}>
 						<label>Логин</label>
 						<input
 							type="text"
