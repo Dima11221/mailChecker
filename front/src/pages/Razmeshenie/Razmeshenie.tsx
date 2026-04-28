@@ -94,7 +94,7 @@ const Razmeshenie = () => {
 		}
 	};
 
-	const allowedSources = ['banki.ru', 'irecommend.ru'];
+	const allowedSources = ['banki.ru', 'irecommend.ru', 'asn-news.ru'];
 	const filteredEmails = emails.filter((e) => allowedSources.includes(e.source));
 
 	const emailsByMailbox = mailboxes.map((mb) => ({
