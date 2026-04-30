@@ -95,7 +95,7 @@ const Sozdanie = () => {
 		}
 	};
 
-	const allowedSources = ['zoon.ru','2gis.ru','yandex.ru'];
+	const allowedSources = ['zoon.ru','2gis.ru','yandex.ru', 'blizko-support.com'];
 	const filteredEmails = emails.filter((e) => allowedSources.includes(e.source));
 
 	const emailsByMailbox = mailboxes.map((mb) => ({
